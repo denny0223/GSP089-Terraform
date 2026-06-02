@@ -449,6 +449,16 @@ gsp089-otel-demo
 
 點進任一 trace，可以看到 `handle_request` 和子 span 的父子關係，以及每個 span 的耗時。這個畫面可以理解成一張請求時間線：越長的 span，代表那段工作花越久。
 
+在這個範例裡，route 和 status 是記在主要 span `handle_request` 的 attributes 上。要找特定路徑的 trace，可以在 Trace Explorer 使用 Filter bar：
+
+1. 點 `Add filter`。
+2. 選 `Add attribute filter`。
+3. Key 輸入 `http.route`。
+4. Value 輸入 `/`、`/api/status` 或 `/checkout`。
+5. 如果要找錯誤 trace，再加一個 attribute filter：Key 輸入 `http.response.status_code`，Value 輸入 `500`。
+
+打開篩選後的 trace，再點選 `handle_request` 或下面的子 span。`handle_request` 會顯示 route、status、scenario；子 span 則用來看這次請求裡哪個步驟花最多時間或發生錯誤。
+
 建議依序觀察：
 
 1. 找一筆 `/` 的 trace。它通常只有 `load_config` 和 `render_response`，總耗時較短。
