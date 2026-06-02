@@ -26,20 +26,29 @@ Terraform 會建立下列資源：
 
 請使用 Google Cloud Skills Boost lab 提供的帳號登入 Google Cloud Console，並開啟 Cloud Shell。
 
-確認目前登入帳號與專案：
+接下來的操作都在 Cloud Shell 裡完成。先確認目前登入帳號與專案是本次 lab 提供的帳號和 project：
 
 ```bash
 gcloud auth list
 gcloud config list project
 ```
 
-確認 Terraform 可用：
+確認 Cloud Shell 裡有 Terraform：
 
 ```bash
 terraform version
 ```
 
 如果 Cloud Shell 顯示找不到 `terraform` 指令，請依照 HashiCorp 官方文件的 [Install Terraform](https://developer.hashicorp.com/terraform/install) 說明安裝。安裝完成後，再重新執行 `terraform version` 確認。
+
+把本專案 clone 到 Cloud Shell，並進入專案目錄：
+
+```bash
+git clone https://github.com/denny0223/GSP089-Terraform.git
+cd GSP089-Terraform
+```
+
+後續 `terraform init`、`terraform plan`、`terraform apply` 和清理指令都要在這個目錄中執行。
 
 ## 設定 lab 環境
 
