@@ -259,7 +259,23 @@ OpenTelemetry 則是讓應用程式自己產生遙測資料的標準。常見資
 - Metrics：應用程式自訂的計數、延遲、佇列長度等數值
 - Logs：應用程式事件與錯誤訊息
 
-在這個延伸練習中，會執行一個 Python 範例程式，產生 traces 和 metrics。接著使用 VM 上的 Ops Agent OTLP receiver 收資料，送到 Cloud Monitoring 和 Cloud Trace。
+在這個延伸練習中，會執行一個 Python 範例程式，產生 traces 和 metrics。接著使用 VM 上的 Ops Agent OTLP receiver 收資料，送到 Cloud Monitoring 和 Cloud Trace。這次操作不示範 OpenTelemetry logs。
+
+這是選做延伸練習，不影響 Skills Boost progress check。它的目標是讓你看到 OpenTelemetry 如何回答應用程式問題：
+
+- 哪個路徑請求最多？
+- 哪個路徑比較慢？
+- 錯誤集中在哪個情境？
+- 一次慢請求裡，時間花在哪個子步驟？
+
+範例程式會重複產生下列教學情境：
+
+| 情境 | Route | Status | 預期觀察 |
+| --- | --- | --- | --- |
+| `fast-homepage` | `/` | `200` | 首頁很快，通常是最低延遲 |
+| `healthy-status-api` | `/api/status` | `200` | API 有後端檢查步驟，延遲中等 |
+| `slow-checkout` | `/checkout` | `200` | 結帳流程比較慢，trace 會看到 inventory/payment 相關子步驟 |
+| `checkout-inventory-error` | `/checkout` | `500` | 結帳偶爾失敗，錯誤會標在 trace 和 error metric 上 |
 
 相關文件：
 
@@ -279,13 +295,17 @@ cd ../..
 
 你會看到程式輸出 span 和 metric。這些資料還沒有送到 Google Cloud，只是印在 Cloud Shell 裡。
 
+span 可以先理解成「一次請求中的一段工作」。例如整個 HTTP request 是一個主要 span，裡面的查詢庫存、準備付款、產生回應頁面，會各自是子 span。多個有父子關係的 span 組合起來，就是一筆 trace。
+
 觀察重點：
 
 - `service.name` 是 `gsp089-otel-demo`
-- `handle_request` 是主要 span
-- `render_response` 是巢狀 span
+- `handle_request` 是主要 span，代表一整次請求
+- `load_config`、`query_health_backend`、`query_inventory`、`prepare_payment`、`render_response` 等是子 span，代表請求中的某個步驟
 - `gsp089.demo.requests` 是請求數 counter
 - `gsp089.demo.latency` 是延遲 histogram
+- `gsp089.demo.errors` 是錯誤數 counter
+- span 和 metric 都有 `route`、`status_code`、`scenario` 等屬性，方便分組觀察
 
 ### 步驟 2：啟用 Cloud Trace API
 
@@ -365,23 +385,39 @@ Navigation menu > Monitoring > Metrics Explorer
 
 在 Metrics Explorer 裡點右上角的 `PromQL`，切換到 PromQL 查詢模式。
 
-查詢請求數：
+查詢各 route 和 status 的請求數：
 
 ```promql
-workload_googleapis_com:gsp089_demo_requests{monitored_resource="gce_instance"}
+sum by (route, status_code) (
+  workload_googleapis_com:gsp089_demo_requests{monitored_resource="gce_instance"}
+)
 ```
 
-查詢延遲筆數：
+你應該會看到 `/`、`/api/status`、`/checkout` 都有 `200` 請求，且 `/checkout` 也會有少量 `500` 請求。
+
+查詢各 route 的平均延遲：
 
 ```promql
-workload_googleapis_com:gsp089_demo_latency_count{monitored_resource="gce_instance"}
+sum by (route) (
+  workload_googleapis_com:gsp089_demo_latency_sum{monitored_resource="gce_instance"}
+)
+/
+sum by (route) (
+  workload_googleapis_com:gsp089_demo_latency_count{monitored_resource="gce_instance"}
+)
 ```
 
-如果要看延遲總和，可以改查：
+你應該會看到 `/checkout` 的平均延遲最高，`/api/status` 次之，`/` 最低。
+
+查詢錯誤數：
 
 ```promql
-workload_googleapis_com:gsp089_demo_latency_sum{monitored_resource="gce_instance"}
+sum by (route, status_code) (
+  workload_googleapis_com:gsp089_demo_errors{monitored_resource="gce_instance"}
+)
 ```
+
+你應該會看到錯誤集中在 `/checkout`，status 是 `500`。
 
 Ops Agent 的 OTLP receiver 會把這些 metrics 寫到 `gce_instance` monitored resource。PromQL 裡的 metric 名稱會把 `workload.googleapis.com/gsp089.demo.requests` 轉成 `workload_googleapis_com:gsp089_demo_requests`；`gsp089.demo.latency` 是 histogram，所以用 `_count`、`_sum`、`_bucket` 後綴查詢。
 
@@ -411,7 +447,16 @@ Navigation menu > Trace > Trace Explorer
 gsp089-otel-demo
 ```
 
-點進任一 trace，可以看到 `handle_request` 和 `render_response` 的父子關係，以及每個 span 的耗時。
+點進任一 trace，可以看到 `handle_request` 和子 span 的父子關係，以及每個 span 的耗時。這個畫面可以理解成一張請求時間線：越長的 span，代表那段工作花越久。
+
+建議依序觀察：
+
+1. 找一筆 `/` 的 trace。它通常只有 `load_config` 和 `render_response`，總耗時較短。
+2. 找一筆 `/api/status` 的 trace。它會多出 `query_health_backend`，總耗時比首頁高。
+3. 找一筆 `/checkout` 且 status `200` 的 trace。它會包含 `load_user`、`query_inventory`、`prepare_payment`、`render_response`，其中 `query_inventory` 通常耗時最多。
+4. 找一筆 `/checkout` 且 status `500` 的 trace。`handle_request` 和 `query_inventory` 會標示錯誤，並記錄 `inventory_timeout` 例外。
+
+這裡要理解的是：metrics 適合先回答「整體趨勢是什麼」，例如哪個 route 慢、哪個 route 錯最多；traces 適合接著回答「單次請求為什麼慢或為什麼錯」，例如慢在 `query_inventory`，或錯在 `inventory_timeout`。
 
 ### 這個延伸練習要理解的重點
 

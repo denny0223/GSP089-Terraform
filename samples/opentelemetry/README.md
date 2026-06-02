@@ -2,6 +2,17 @@
 
 這個範例會產生少量 traces 和 metrics。可以先把遙測資料印在 console，也可以透過 OTLP 匯出到 Ops Agent receiver。
 
+程式會重複產生幾個固定教學情境：
+
+- `/`：正常且快速的首頁請求。
+- `/api/status`：有後端檢查步驟的中等延遲請求。
+- `/checkout`：較慢的結帳請求。
+- `/checkout` status `500`：模擬 inventory timeout 的錯誤請求。
+
+span 可以先理解成「一次請求中的一段工作」。多個有父子關係的 span 組合起來，就是一筆 trace。
+
+觀察時請比較 request counter、error counter、latency histogram，以及 Cloud Trace 裡 `handle_request` 和子 span 的耗時差異。
+
 在本機用 console output 執行：
 
 ```bash
