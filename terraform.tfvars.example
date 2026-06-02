@@ -1,0 +1,8 @@
+project_id   = "qwiklabs-gcp-xx-xxxxxxxxxxxx"
+region       = "us-central1"
+zone         = "us-central1-b"
+vm_name      = "lamp-1-vm"
+machine_type = "e2-medium"
+
+# Optional. Leave empty if students do not want email notifications.
+alert_email = ""
