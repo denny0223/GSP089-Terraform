@@ -370,11 +370,16 @@ workload.googleapis.com/gsp089.demo.requests
 workload.googleapis.com/gsp089.demo.latency
 ```
 
-也可以用 Cloud Shell 確認 metric descriptor 是否已建立：
+也可以用 Cloud Shell 呼叫 Cloud Monitoring API，確認 metric descriptor 是否已建立：
 
 ```bash
-gcloud monitoring metrics list \
-  --filter='metric.type:"workload.googleapis.com/gsp089.demo"'
+PROJECT_ID="$(gcloud config get-value project)"
+
+curl -s -G \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://monitoring.googleapis.com/v3/projects/${PROJECT_ID}/metricDescriptors" \
+  --data-urlencode 'filter=metric.type = starts_with("workload.googleapis.com/gsp089.demo")' \
+  | python3 -m json.tool
 ```
 
 ### 步驟 7：在 Cloud Trace 查看 traces
