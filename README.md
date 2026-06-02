@@ -52,7 +52,7 @@ cd GSP089-Terraform
 
 ## 設定 lab 環境
 
-每次啟動 Skills Boost lab 時，Google Cloud project id 可能不同。請先設定本 lab 使用的 region 與 zone：
+每次啟動 Skills Boost lab 時，Google Cloud project id 可能不同。請先設定本 lab 使用的區域（region）與可用區（zone）：
 
 ```bash
 gcloud config set compute/region "us-central1"
