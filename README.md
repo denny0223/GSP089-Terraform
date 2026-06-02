@@ -363,12 +363,27 @@ gcloud compute ssh lamp-1-vm \
 Navigation menu > Monitoring > Metrics Explorer
 ```
 
-搜尋下列 metric：
+在 Metrics Explorer 裡點右上角的 `PromQL`，切換到 PromQL 查詢模式。
 
-```text
-workload.googleapis.com/gsp089.demo.requests
-workload.googleapis.com/gsp089.demo.latency
+查詢請求數：
+
+```promql
+workload_googleapis_com:gsp089_demo_requests{monitored_resource="gce_instance"}
 ```
+
+查詢延遲筆數：
+
+```promql
+workload_googleapis_com:gsp089_demo_latency_count{monitored_resource="gce_instance"}
+```
+
+如果要看延遲總和，可以改查：
+
+```promql
+workload_googleapis_com:gsp089_demo_latency_sum{monitored_resource="gce_instance"}
+```
+
+Ops Agent 的 OTLP receiver 會把這些 metrics 寫到 `gce_instance` monitored resource。PromQL 裡的 metric 名稱會把 `workload.googleapis.com/gsp089.demo.requests` 轉成 `workload_googleapis_com:gsp089_demo_requests`；`gsp089.demo.latency` 是 histogram，所以用 `_count`、`_sum`、`_bucket` 後綴查詢。
 
 也可以用 Cloud Shell 呼叫 Cloud Monitoring API，確認 metric descriptor 是否已建立：
 
