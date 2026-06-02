@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import random
 import time
 
 from opentelemetry import metrics, trace
@@ -12,8 +11,53 @@ from opentelemetry.sdk.metrics.export import (
     PeriodicExportingMetricReader,
 )
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.trace import Status, StatusCode
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+
+SCENARIOS = [
+    {
+        "name": "fast-homepage",
+        "route": "/",
+        "status_code": 200,
+        "steps": [
+            ("load_config", 12, None),
+            ("render_response", 28, None),
+        ],
+    },
+    {
+        "name": "healthy-status-api",
+        "route": "/api/status",
+        "status_code": 200,
+        "steps": [
+            ("check_cache", 35, None),
+            ("query_health_backend", 95, None),
+            ("render_response", 18, None),
+        ],
+    },
+    {
+        "name": "slow-checkout",
+        "route": "/checkout",
+        "status_code": 200,
+        "steps": [
+            ("load_user", 55, None),
+            ("query_inventory", 190, None),
+            ("prepare_payment", 85, None),
+            ("render_response", 35, None),
+        ],
+    },
+    {
+        "name": "checkout-inventory-error",
+        "route": "/checkout",
+        "status_code": 500,
+        "error_type": "inventory_timeout",
+        "steps": [
+            ("load_user", 50, None),
+            ("query_inventory", 260, "inventory_timeout"),
+            ("render_error_page", 30, None),
+        ],
+    },
+]
 
 
 def parse_args():
@@ -82,32 +126,65 @@ def main():
         unit="1",
         description="Number of synthetic requests processed by the demo app.",
     )
+    error_counter = meter.create_counter(
+        "gsp089.demo.errors",
+        unit="1",
+        description="Number of synthetic failed requests emitted by the demo app.",
+    )
     latency_histogram = meter.create_histogram(
         "gsp089.demo.latency",
         unit="ms",
         description="Synthetic request latency.",
     )
 
-    routes = ["/", "/checkout", "/api/status"]
-
     for index in range(args.iterations):
-        route = random.choice(routes)
-        latency_ms = random.randint(40, 350)
+        scenario = SCENARIOS[index % len(SCENARIOS)]
+        route = scenario["route"]
+        status_code = scenario["status_code"]
+        latency_ms = sum(step_duration for _, step_duration, _ in scenario["steps"])
 
         with tracer.start_as_current_span("handle_request") as span:
             span.set_attribute("http.request.method", "GET")
+            span.set_attribute("http.route", route)
+            span.set_attribute("http.response.status_code", status_code)
             span.set_attribute("url.path", route)
             span.set_attribute("demo.iteration", index + 1)
-            time.sleep(latency_ms / 1000)
+            span.set_attribute("demo.scenario", scenario["name"])
+            span.set_attribute("demo.latency_ms", latency_ms)
 
-            with tracer.start_as_current_span("render_response") as child_span:
-                child_span.set_attribute("demo.template", "apache-default")
-                time.sleep(random.randint(10, 80) / 1000)
+            if status_code != 200:
+                error_type = scenario.get("error_type", "application_error")
+                span.set_attribute("error.type", error_type)
+                span.set_status(Status(StatusCode.ERROR, error_type))
 
-        attributes = {"route": route}
+            for step_name, step_duration_ms, step_error in scenario["steps"]:
+                with tracer.start_as_current_span(step_name) as child_span:
+                    child_span.set_attribute("demo.step", step_name)
+                    child_span.set_attribute("demo.step_duration_ms", step_duration_ms)
+                    time.sleep(step_duration_ms / 1000)
+
+                    if step_error:
+                        exception = RuntimeError(step_error)
+                        child_span.set_attribute("error.type", step_error)
+                        child_span.record_exception(exception)
+                        child_span.set_status(Status(StatusCode.ERROR, step_error))
+                        span.record_exception(exception)
+
+        attributes = {
+            "route": route,
+            "status_code": str(status_code),
+            "scenario": scenario["name"],
+        }
         request_counter.add(1, attributes=attributes)
         latency_histogram.record(latency_ms, attributes=attributes)
-        print(f"emitted request {index + 1}: route={route} latency_ms={latency_ms}")
+        if status_code != 200:
+            error_counter.add(1, attributes=attributes)
+
+        print(
+            "emitted request "
+            f"{index + 1}: scenario={scenario['name']} route={route} "
+            f"status={status_code} latency_ms={latency_ms}"
+        )
 
     trace_provider.shutdown()
     meter_provider.shutdown()
