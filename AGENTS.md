@@ -27,6 +27,7 @@ Tracked files must not contain real Qwiklabs credentials or a real Qwiklabs proj
 - `main.tf`: Compute Engine, firewall, and VM startup script.
 - `monitoring.tf`: Monitoring uptime check, notification channel, alert policy, and dashboard.
 - `outputs.tf`: values students use to verify the lab.
+- `samples/opentelemetry/`: optional OpenTelemetry follow-up exercise files.
 - `terraform.tfvars.example`: safe example input values.
 
 `terraform.tfvars` is local to each lab session and must stay ignored.
@@ -52,6 +53,7 @@ Preserve lab-required resource names unless the lab instructions change.
 - Keep commands copy-paste friendly for Cloud Shell.
 - Use official provider resources instead of shelling out from Terraform.
 - Keep the VM startup script focused on guest setup: Apache, PHP, and Ops Agent.
+- Keep OpenTelemetry samples small, dependency-light, and runnable from Cloud Shell or the lab VM.
 - Be careful when changing Monitoring metric type strings; dashboards and alert policies depend on exact metric names.
 - Run `terraform fmt` after editing Terraform files.
 - Run `terraform validate` when provider plugins are available.

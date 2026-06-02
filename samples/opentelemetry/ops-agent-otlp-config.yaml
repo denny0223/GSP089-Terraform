@@ -1,0 +1,17 @@
+combined:
+  receivers:
+    otlp:
+      type: otlp
+      metrics_mode: googlecloudmonitoring
+
+metrics:
+  service:
+    pipelines:
+      otlp:
+        receivers: [otlp]
+
+traces:
+  service:
+    pipelines:
+      otlp:
+        receivers: [otlp]

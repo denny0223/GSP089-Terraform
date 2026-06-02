@@ -6,3 +6,6 @@ crash.log
 crash.*.log
 *.swp
 *.swo
+__pycache__/
+*.pyc
+.venv/
