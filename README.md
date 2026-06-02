@@ -306,3 +306,24 @@ gcloud compute ssh lamp-1-vm \
   --zone "$(gcloud config get-value compute/zone)" \
   --command 'sudo systemctl status "google-cloud-ops-agent*"'
 ```
+
+### VM 建立失敗：zone 沒有足夠資源
+
+如果 `terraform apply` 顯示類似訊息：
+
+```text
+The zone ... does not have enough resources available to fulfill the request.
+A e2-medium VM instance is currently unavailable ...
+```
+
+代表 lab 指定的 zone 暫時沒有足夠容量建立 VM。不要任意改 region、zone 或 machine type，否則可能導致 Skills Boost progress check 無法通過。
+
+這是 Compute Engine 的資源可用性錯誤。可參考 Google Cloud 官方文件：[排解資源可用性錯誤](https://cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability?hl=zh-tw)。
+
+先等待幾分鐘，然後在相同設定下再次執行：
+
+```bash
+terraform apply
+```
+
+如果多次重試仍失敗，請保留 lab 指定的設定，重新啟動 lab 或稍後再試。
