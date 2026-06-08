@@ -506,6 +506,13 @@ Terraform 會列出即將刪除的資源。確認內容後輸入 `yes`。
 - `samples/opentelemetry/`：OpenTelemetry 延伸練習範例
 - `terraform.tfvars.example`：變數檔範例
 
+## 授權
+
+本專案採用雙授權：
+
+- Terraform、程式碼與範例檔案以 [MIT License](LICENSE) 授權。
+- README、教學內容與其他文件以 [Creative Commons Attribution 4.0 International（CC BY 4.0）](LICENSE-docs.md) 授權。
+
 ## 常見問題
 
 ### `terraform apply` 套用到錯誤 project
