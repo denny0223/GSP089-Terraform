@@ -1,4 +1,4 @@
-# GSP089：使用 Terraform 完成 Cloud Monitoring Lab
+# GSP089：使用 Terraform 完成 [Cloud Monitoring Lab](https://partner.skills.google/focuses/22769?parent=catalog)
 
 本 lab 會使用 Terraform 建立一台 Compute Engine VM，安裝 Apache 與 Google Cloud Ops Agent，並建立 Cloud Monitoring 的 uptime check、alert policy 和 dashboard。
 
