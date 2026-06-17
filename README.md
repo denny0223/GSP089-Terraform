@@ -8,14 +8,19 @@ Skills Boost 是這個 lab 的入口和判分系統；最後是否完成，以 S
 
 這份 README 是同一個 lab 的 Terraform 做法。原本 Skills Boost 會帶你在 Console 建立 VM、uptime check、alert policy 和 dashboard；這裡改成用 Terraform 建立對應資源，並說明每個 `.tf` 檔案、Terraform 指令和驗證方式的意義。
 
+> [!IMPORTANT]
+> 先不要啟動 Skills Boost lab。這個 lab 只有 20 分鐘，建議先讀到「Terraform 執行流程」，理解 Terraform 會建立哪些資源、每個檔案負責什麼，以及後面指令會做什麼。
+
 建議閱讀和操作順序：
 
-1. 先不要啟動 Skills Boost lab。先讀到「Terraform 執行流程」，理解 Terraform 會建立哪些資源、每個檔案負責什麼，以及後面指令會做什麼。
+1. 先讀到「Terraform 執行流程」。
 2. 準備操作時，再啟動 Skills Boost lab，取得本次 lab 的帳號、專案（project）、區域（region）和可用區（zone）。
 3. 回到這份 README，從「啟動 lab 後」開始操作。倒數開始後，先一路做到並完成「對照 lab 任務與驗證」。
 4. 每完成一段 Terraform 操作，就回到 Skills Boost 按 Check my progress，確認 lab 系統是否接受目前狀態。
 5. 主 lab 完成後再決定是否做 OpenTelemetry 延伸練習；如果要做，先不要執行 `terraform destroy`。
-6. 如果 Skills Boost 畫面上的 region、zone、資源名稱或任務內容和 README 不同，請以 Skills Boost 當次 lab 的內容為準，再把對應值填進 `terraform.tfvars` 或 Terraform 變數。
+
+> [!CAUTION]
+> 如果 Skills Boost 畫面上的 region、zone、資源名稱或任務內容和 README 不同，請以 Skills Boost 當次 lab 的內容為準，再把對應值填進 `terraform.tfvars` 或 Terraform 變數。
 
 Google Cloud Console 和 Skills Boost 可能顯示中文或英文介面。README 會保留常見英文名稱，必要時補上中文對照；如果你的畫面是中文，請用英文名稱或相近中文名稱對照尋找。
 
@@ -132,6 +137,9 @@ cd GSP089-Terraform
 
 後續 `terraform init`、`terraform plan`、`terraform apply` 和清理指令都要在這個目錄中執行。
 
+> [!TIP]
+> 如果後面的 Terraform 指令找不到檔案或顯示目前目錄沒有 Terraform 設定，先用 `pwd` 確認自己在 `GSP089-Terraform` 目錄中。
+
 ## 設定 lab 環境
 
 每次啟動 Skills Boost lab 時，Google Cloud 專案 ID（project id）不同，在 Skills Boost 頁面上的「工作 1：建立 Compute Engine 執行個體（Task 1. Create a Compute Engine instance）」段落找到資訊，並設定本次 lab 使用的區域（region）與可用區（zone）：
@@ -160,8 +168,6 @@ machine_type = "e2-medium"
 alert_email  = ""
 EOF
 ```
-
-`terraform.tfvars` 會提供 Terraform 需要的變數值。這個檔案只屬於本次 lab，不需要提交到版本控制。
 
 如果要讓 alert policy 寄送 email，把 `terraform.tfvars` 裡的 `alert_email` 改成你的 email：
 
@@ -198,7 +204,8 @@ terraform init
 terraform plan
 ```
 
-請先看 plan 裡的摘要。這個 lab 預期會建立 VM、防火牆規則、uptime check、alert policy、可能的 email notification channel，以及 dashboard。`plan` 還不會真正建立資源。
+> [!NOTE]
+> 請先看 plan 裡的摘要。這個 lab 預期會建立 VM、防火牆規則、uptime check、alert policy、可能的 email notification channel，以及 dashboard。`plan` 還不會真正建立資源。
 
 建立資源：
 
@@ -267,13 +274,19 @@ gcloud compute ssh lamp-1-vm \
 
 Terraform 會建立 `Lamp Uptime Check`，每 60 秒用 HTTP 檢查 VM 外部 IP。這個設定來自 [`monitoring.tf`](monitoring.tf) 裡的 `google_monitoring_uptime_check_config.lamp`。
 
+> [!TIP]
+> 要快速找到 Google Cloud 產品和服務，請點選「導覽選單」，或在「搜尋」欄位輸入服務或產品名稱。
+> ![Google Cloud Console 的導覽選單圖示和搜尋欄位](img/google-cloud-navigation-menu-search.png)
+
+
 到 Console 查看結果：
 
 ```text
 導覽選單（Navigation menu）> 監控（Monitoring）> 運作時間檢查（Uptime checks）
 ```
 
-Uptime check 建立後通常需要等待幾分鐘，狀態才會完整顯示。
+> [!NOTE]
+> Uptime check 建立後通常需要等待幾分鐘，狀態才會完整顯示。
 
 ### 工作 4：建立 alert policy
 
@@ -306,21 +319,24 @@ Dashboard 內有兩張 line chart：
 導覽選單（Navigation menu）> 監控（Monitoring）> 資訊主頁（Dashboards）
 ```
 
-Ops Agent 指標剛開始可能不會立刻出現，請等待幾分鐘後重新整理頁面。
+> [!NOTE]
+> Ops Agent 指標剛開始可能不會立刻出現，請等待幾分鐘後重新整理頁面。
 
 ### 工作 6：查看 logs
 
 到記錄檔探索工具（Logs Explorer）查看 VM logs：
 
 ```text
-導覽選單（Navigation menu）> 記錄（Logging）> Logs Explorer
+導覽選單（Navigation menu）> 監控（Monitoring）> Logs Explorer
 ```
 
 選擇資源：
 
 ```text
-VM instance > lamp-1-vm
+VM 執行個體（VM instance）> lamp-1-vm
 ```
+
+<img src="img/logs-explorer-vm-instance-lamp-1-vm.png" alt="Logs Explorer 中選擇 VM 執行個體 lamp-1-vm" width="80%">
 
 也可以用 Cloud Shell 查最近的 VM logs：
 
@@ -353,7 +369,10 @@ VM 停止與啟動後，回到監控（Monitoring）和記錄（Logging）觀察
 
 到這裡，主 lab 需要的資源和驗證都已完成。請回到 Skills Boost 按 Check my progress。
 
-如果只做 Skills Boost lab，可以跳到[清理資源](#清理資源)。如果想繼續做 OpenTelemetry 延伸練習，請先保留 VM 和監控資源，不要執行 `terraform destroy`。
+如果只做 Skills Boost lab，可以跳到[清理資源](#清理資源)。
+
+> [!IMPORTANT]
+> 如果想繼續做 OpenTelemetry 延伸練習，請先保留 VM 和監控資源，不要執行 `terraform destroy`。
 
 ## 延伸：用 OpenTelemetry 產生應用程式遙測資料
 
@@ -583,7 +602,8 @@ gsp089-otel-demo
 
 ## 清理資源
 
-確定不做 OpenTelemetry 延伸練習，或延伸練習已經做完後，再刪除 Terraform 建立的資源：
+> [!CAUTION]
+> 確定不做 OpenTelemetry 延伸練習，或延伸練習已經做完後，再刪除 Terraform 建立的資源。
 
 ```bash
 terraform destroy
@@ -639,7 +659,10 @@ The zone ... does not have enough resources available to fulfill the request.
 A e2-medium VM instance is currently unavailable ...
 ```
 
-代表 lab 指定的 zone 暫時沒有足夠容量建立 VM。不要任意改 region、zone 或 machine type，否則可能導致 Skills Boost 的 Check my progress 無法通過。
+代表 lab 指定的 zone 暫時沒有足夠容量建立 VM。
+
+> [!WARNING]
+> 不要任意改 region、zone 或 machine type，否則可能導致 Skills Boost 的 Check my progress 無法通過。
 
 這是 Compute Engine 的資源可用性錯誤。可參考 Google Cloud 官方文件：[排解資源可用性錯誤](https://cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability?hl=zh-tw)。
 
