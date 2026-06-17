@@ -134,11 +134,14 @@ cd GSP089-Terraform
 
 ## 設定 lab 環境
 
-每次啟動 Skills Boost lab 時，Google Cloud 專案 ID（project id）可能不同。請先設定本 lab 使用的區域（region）與可用區（zone）：
+每次啟動 Skills Boost lab 時，Google Cloud 專案 ID（project id）不同，在 Skills Boost 頁面上的「工作 1：建立 Compute Engine 執行個體（Task 1. Create a Compute Engine instance）」段落找到資訊，並設定本次 lab 使用的區域（region）與可用區（zone）：
 
 ```bash
-gcloud config set compute/region "us-central1"
-gcloud config set compute/zone "us-central1-b"
+REGION="請把這整段文字改成本次 lab 指定的 region，例如 us-central1"
+ZONE="請把這整段文字改成本次 lab 指定的 zone，例如 us-central1-b"
+
+gcloud config set compute/region "${REGION}"
+gcloud config set compute/zone "${ZONE}"
 ```
 
 接著產生本次 lab 專用的 `terraform.tfvars`：
