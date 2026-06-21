@@ -23,6 +23,7 @@ Tracked files must not contain real Qwiklabs credentials or a real Qwiklabs proj
 ## Terraform layout
 
 - `versions.tf`: Terraform version and provider requirements.
+- `provider.tf`: Google provider configuration for project, region, and zone.
 - `variables.tf`: input variables and defaults.
 - `main.tf`: Compute Engine, firewall, and VM startup script.
 - `monitoring.tf`: Monitoring uptime check, notification channel, alert policy, and dashboard.
